@@ -3,9 +3,10 @@ from langchain.llms import OpenAI
 from langchain.vectorstores import SupabaseVectorStore
 import os
 import json
+import logging
 
-openai_api_key = os.openai_api_key
-logger = get_logger(__name__)
+openai_api_key = os.environ['OPENAI_API_KEY']
+logger = logging.getLogger(__name__)
 modelai = OpenAI(
         max_tokens=555
     )
@@ -22,3 +23,4 @@ def chat_with_doc(model, vector_store: SupabaseVectorStore, stats_db, question):
             logger.info('Result: %s', model_response)
 
             print(model_response)
+            return model_response
