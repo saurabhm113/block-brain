@@ -1,22 +1,25 @@
 import os
 import tempfile
 import json
+import logging
+import auth 
 from files import file_uploader
 from question import chat_with_doc
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import SupabaseVectorStore
 from supabase import Client, create_client
-from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 from langchain.document_loaders import YoutubeLoader
-from fastapi.responses import JSONResponse
 from loaders.html import get_content, HTMLRetrievalError, FileWritingError, UnexpectedError
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel, HttpUrl
 
-import logging
+
 
 # Global variables
 page_content = ""
@@ -38,6 +41,13 @@ question = "summerise"
 
 app = FastAPI()
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update with specific origins as needed
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 print("🧠 Blokument Brain  🧠")
 
@@ -66,7 +76,9 @@ class Video(BaseModel):
     video_url: HttpUrl
 
 @app.post("/YouTubeURL")
-async def load_youtube_video(video: Video):
+async def load_youtube_video(
+    video: Video,
+    x_api_key: str = Depends(auth.verify_api_key)):
     # Extract the video URL from the request body
     video_url = video.video_url
 
@@ -90,21 +102,26 @@ async def load_youtube_video(video: Video):
     file_uploader(file_path, supabase, openai_api_key, vector_store)
 
     # Return the response
-    return response_dict
+    return {
+            'statusCode': 200,
+            'body': response_dict
+        }
     
 class QueryRequest(BaseModel):
     topic: str
 
-def parse_question_content(content):
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        return {
-            'error': 'Please provide a valid topic.'
-        }
+# def parse_question_content(content):
+#     try:
+#         return json.loads(content)
+#     except json.JSONDecodeError:
+#         return {
+#             'error': 'Please provide a valid topic.'
+#         }
 
 @app.post("/query")
-async def query_with_doc(request: QueryRequest):
+async def query_with_doc(
+    request: QueryRequest,
+    x_api_key: str = Depends(auth.verify_api_key)):
     # Configure logging
     logging.basicConfig(level=logging.INFO)  # Set the desired log level   
     question = request.topic
@@ -133,7 +150,9 @@ class URL(BaseModel):
     url: str
 
 @app.post("/url_embed")
-async def ambed_url(request: URL):
+async def ambed_url(
+    request: URL,
+    x_api_key: str = Depends(auth.verify_api_key)):
     try:
         url = request.url
         file_path = get_content(url)
