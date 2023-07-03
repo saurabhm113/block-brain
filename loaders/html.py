@@ -55,7 +55,7 @@ import logging
 
 import re
 import nltk
-#nltk.download('punkt')
+nltk.download('punkt')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)  # Set the desired log level
