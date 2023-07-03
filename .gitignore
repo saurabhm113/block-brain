@@ -1,0 +1,24 @@
+# Ignore compiled Python files
+*.pyc
+
+# Ignore virtual environment folders (e.g., venv, env, .venv)
+venv/
+env/
+.venv/
+
+# Ignore generated files
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.log
+
+# Ignore local development settings
+.env
+
+# Ignore IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.swp
+*~
