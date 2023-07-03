@@ -10,14 +10,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 from langchain.document_loaders import YoutubeLoader
 from fastapi.responses import JSONResponse
+from loaders.html import get_content, HTMLRetrievalError, FileWritingError, UnexpectedError
 
 
 from fastapi import FastAPI
 from pydantic import BaseModel, HttpUrl
 
-# Define a Pydantic model for the request body
-class Video(BaseModel):
-    video_url: HttpUrl
+import logging
 
 # Global variables
 page_content = ""
@@ -61,6 +60,10 @@ def temp_file(title, page_content):
 # then get the transcribe of youtube video
 # dump transcribe txt file to temp folder
 # get to loader variable
+# Define a Pydantic model for the request body
+
+class Video(BaseModel):
+    video_url: HttpUrl
 
 @app.post("/YouTubeURL")
 async def load_youtube_video(video: Video):
@@ -88,20 +91,71 @@ async def load_youtube_video(video: Video):
 
     # Return the response
     return response_dict
+    
 class QueryRequest(BaseModel):
-    query: str
+    topic: str
+
+def parse_question_content(content):
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return {
+            'error': 'Please provide a valid topic.'
+        }
 
 @app.post("/query")
 async def query_with_doc(request: QueryRequest):
-    question = request.query
-
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)  # Set the desired log level   
+    question = request.topic
+    logging.info('Question: %s', question)
     # Call chat_with_doc function and store the response
     chat_response = chat_with_doc(models[0], vector_store, stats_db=supabase, question=question)
+    # logging.info(chat_response)
+    # # Convert the chat_response string to a JSON object (dictionary)
+    # chat_response_dict = json.loads(chat_response)
+     # Extract the JSON object from chat_response
+    start_index = chat_response.find("{")  # Find the start index of the JSON object
+    end_index = chat_response.rfind("}")  # Find the end index of the JSON object
+    json_str = chat_response[start_index:end_index+1]  # Extract the JSON object string
 
-    print(chat_response)
+    # Convert the JSON object string to a dictionary
+    chat_response_dict = json.loads(json_str)
 
-    # Create a dictionary with the chat response
-    response_dict = {"chat_response": chat_response}
 
     # Return the response as JSON
-    return JSONResponse(content=response_dict)
+    return {
+        'statusCode': 200,
+        'body': chat_response_dict
+    }
+
+class URL(BaseModel):
+    url: str
+
+@app.post("/url_embed")
+async def ambed_url(request: URL):
+    try:
+        url = request.url
+        file_path = get_content(url)
+        logging.info(file_path)
+        # Call file_uploader function with the file path
+        result = file_uploader(file_path, supabase, openai_api_key, vector_store)
+
+        result_dict = json.loads(result)  # Parse the JSON-encoded string into a dictionary
+        status = result_dict["status"]  # Extract the "status" value
+
+        logging.info(status)
+        # Return the response as JSON
+        return {
+            'statusCode': 200,
+            'body': status
+        }
+
+    except HTMLRetrievalError as e:
+        return {"error": "Failed to retrieve HTML from the given URL."}
+
+    except FileWritingError as e:
+        return {"error": "Failed to write HTML content to file."}
+
+    except UnexpectedError as e:
+        return {"error": "An unexpected error occurred while processing the request."}

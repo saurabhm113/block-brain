@@ -15,6 +15,7 @@ import re
 import unicodedata
 import tempfile
 from utils import compute_sha1_from_file, compute_sha1_from_content
+import json
 
 file_processors = {
     ".txt": process_txt,
@@ -61,10 +62,11 @@ def filter_file(file, supabase, vector_store):
             return False
 
 def file_uploader(file_path, supabase, openai_api_key, vector_store):
+    result = {}
     # Check if the file already exists in the database
     if file_already_exists(supabase, file_path):
-        print(f"😎 {os.path.basename(file_path)} is already in the database.")
-        return False
+        result["status"] = "already_exists_in_db"
+        result["message"] = f"{os.path.basename(file_path)} is already in the database."
     else:
         # Get the file extension
         file_extension = os.path.splitext(file_path)[-1]
@@ -72,11 +74,13 @@ def file_uploader(file_path, supabase, openai_api_key, vector_store):
             # Open the file and process it
             with open(file_path, 'rb') as file:
                 file_processors[file_extension](vector_store, file, stats_db=supabase)
-            print(f"✅ {os.path.basename(file_path)} ")
-            return True
+            result["status"] = "successfully embedded"
+            result["message"] = f"{os.path.basename(file_path)} was processed and uploaded successfully."
         else:
-            print(f"❌ {os.path.basename(file_path)} is not a valid file type.")
-            return False
+            result["status"] = "invalid_file"
+            result["message"] = f"{os.path.basename(file_path)} is not a valid file type."
+    return json.dumps(result)
+
 
 # def url_uploader(url, supabase, vector_store):
 #     loader = YoutubeLoader.from_youtube_url(url, add_video_info=False)
