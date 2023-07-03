@@ -22,3 +22,8 @@ build/
 *.sublime-workspace
 *.swp
 *~
+#Ignore tmp
+tmp/
+
+#ignore doc
+html_doc/
