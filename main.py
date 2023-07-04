@@ -4,7 +4,7 @@ import json
 import logging
 import auth 
 from files import file_uploader
-from question import chat_with_doc
+from question import chat_with_doc, chat_with_doc_predict
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import SupabaseVectorStore
 from supabase import Client, create_client
@@ -110,14 +110,6 @@ async def load_youtube_video(
 class QueryRequest(BaseModel):
     topic: str
 
-# def parse_question_content(content):
-#     try:
-#         return json.loads(content)
-#     except json.JSONDecodeError:
-#         return {
-#             'error': 'Please provide a valid topic.'
-#         }
-
 @app.post("/query")
 async def query_with_doc(
     request: QueryRequest,
@@ -178,3 +170,35 @@ async def ambed_url(
 
     except UnexpectedError as e:
         return {"error": "An unexpected error occurred while processing the request."}
+
+class QueryRequest(BaseModel):
+    topic: str
+
+@app.post("/query_predict")
+async def query_with_doc(
+    request: QueryRequest,
+    x_api_key: str = Depends(auth.verify_api_key)):
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)  # Set the desired log level   
+    question = request.topic
+    logging.info('Question: %s', question)
+    # Call chat_with_doc function and store the response
+    chat_response = chat_with_doc_predict(models[0], vector_store, stats_db=supabase, question=question)
+    # logging.info(chat_response)
+    # # Convert the chat_response string to a JSON object (dictionary)
+    # chat_response_dict = json.loads(chat_response)
+     # Extract the JSON object from chat_response
+    start_index = chat_response.find("{")  # Find the start index of the JSON object
+    end_index = chat_response.rfind("}")  # Find the end index of the JSON object
+    json_str = chat_response[start_index:end_index+1]  # Extract the JSON object string
+
+    # Convert the JSON object string to a dictionary
+    chat_response_dict = json.loads(json_str)
+
+
+    # Return the response as JSON
+    return {
+        'statusCode': 200,
+        'body': chat_response_dict
+    }
+
