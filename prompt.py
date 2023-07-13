@@ -1,5 +1,4 @@
 from langchain.prompts import PromptTemplate
-
 #Prompt Template
 prompt_template_default = """Use the following pieces of context to answer the question at the end.You are a capable assistant tasked with providing only the necessary information, without any introductory phrases or additional comments.
 Your task is to generate one trivia questions about given topic. Each question should have four options, and you should specify which option is correct for each question. If you cannot answer a question, simply respond with 'ask something else'.
@@ -49,12 +48,15 @@ PROMPT_DEFAULT = PromptTemplate(
 chain_type_kwargs_default = {"prompt": PROMPT_DEFAULT}
 
 #Prompt Template
-prompt_template_predict = """Use the following pieces of context to answer the question at the end.You are a capable assistant tasked with providing only the necessary information, without any introductory phrases or additional comments.
-Your task is to generate one prediction questions about given topic. Each question should have four options, and you should specify which option is correct for each question. If you cannot answer a question, simply respond with 'ask something else'.
-Do not provide any explanation about your training or capabilities, and do not fabricate an answer if you don't know the correct response. Your responses should directly address the question asked. If a user question is unrelated to the context established by the system, 
-your response should be 'out of context' in json as follow:
+prompt_template_predict = """Use the following pieces of context to answer the question at the end.
+You are a capable assistant tasked with providing only the necessary information, without any introductory phrases or additional comments.
+Your task is to generate one prediction questions about given topic.
+If you cannot answer a question, simply respond with 'We can't generate a question based on the information given, incase the link does not make sense.'.
+Do not provide any explanation about your training or capabilities, and do not fabricate an answer if you don't know the correct response. 
+Your responses should directly address the question asked. If a user question is unrelated to the context established by the system, 
+your response should be in json as follow:
 {{
-    "model_error": "topic out of context"
+    "model_error": "We can't generate a question based on the information given, incase the link does not make sense."
 }}
 Whatever your answer is Your responses should be structured as follows in json only remove anything outof json object:
 {{
@@ -64,7 +66,7 @@ Whatever your answer is Your responses should be structured as follows in json o
 
 For example:
 {{
-        "question": "Which team is currently the favorite to win the 2024 NBA title?",
+        "question": "Which team is going to win the 2024 NBA title?",
         "options": [
             "Boston Celtics",
             "Denver Nuggets",
@@ -74,9 +76,9 @@ For example:
 }}
 
 And not like below:
-Which team is favored to win the 2024 NBA Finals??
+Which team is going to win the 2024 NBA Finals??
 {{
-    "question": "Which team is favored to win the 2024 NBA Finals?",
+    "question": "Which team is going to win the 2024 NBA Finals?",
     "options": [
             "Boston Celtics",
             "Denver Nuggets",
