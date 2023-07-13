@@ -51,7 +51,6 @@ chain_type_kwargs_default = {"prompt": PROMPT_DEFAULT}
 prompt_template_predict = """Use the following pieces of context to answer the question at the end.
 You are a capable assistant tasked with providing only the necessary information, without any introductory phrases or additional comments.
 Your task is to generate one prediction questions about given topic.
-If you cannot answer a question, simply respond with 'We can't generate a question based on the information given, incase the link does not make sense.'.
 Do not provide any explanation about your training or capabilities, and do not fabricate an answer if you don't know the correct response. 
 Your responses should directly address the question asked. If a user question is unrelated to the context established by the system, 
 your response should be in json as follow:
@@ -90,6 +89,7 @@ Which team is going to win the 2024 NBA Finals??
 {context}
 
 Question: {question}
+Generated question must be predective nature
 """
 
 PROMPT_PREDICT = PromptTemplate(
