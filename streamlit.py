@@ -1,14 +1,24 @@
 import streamlit as st
 import os
+import tempfile
 import json
 import logging
-from pydantic import BaseModel, HttpUrl
-
+import auth 
+from files import file_uploader
 from question import chat_with_doc, chat_with_doc_predict
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import SupabaseVectorStore
 from supabase import Client, create_client
+from pydantic import BaseModel, HttpUrl
+from langchain.document_loaders import YoutubeLoader
 from loaders.html import get_content, HTMLRetrievalError, FileWritingError, UnexpectedError
+
+
+from fastapi import FastAPI, Depends
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from pydantic import BaseModel, HttpUrl
 
 supabase_url = os.environ["SUPABASE_URL"]
 supabase_key = os.environ["SUPABASE_SERVICE_KEY"]
@@ -25,7 +35,7 @@ question = "summerise"
 def load_youtube_video(video_url):
     loader = YoutubeLoader.from_youtube_url(video_url, add_video_info=True)
     response = loader.load()
-
+    logging.info(response)
     document = response[0]
 
     response_dict = {
